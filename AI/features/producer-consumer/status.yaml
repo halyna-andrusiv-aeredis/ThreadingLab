@@ -1,0 +1,29 @@
+# States and transitions are canonical in AI/core/state-machine.md.
+# overall ∈ {not_started, planned, tasks_split, implementing, qa_pending, done, blocked}
+# task status ∈ {pending, in_progress, blocked, done, superseded}
+feature_id: producer-consumer
+overall: done
+last_updated: 2026-07-24
+last_processed_change: none
+
+blockers: []
+
+next_action:
+  - Feature complete (G4 manual QA passed).
+
+tasks:
+  - id: "01"
+    title: Core bounded producer/consumer + lifecycle
+    type: code
+    status: done
+    review: passed
+  - id: "02"
+    title: Controls + backpressure/starvation indicators + throughput
+    type: code
+    status: done
+    review: reviews/REVIEW_G3.md
+  - id: "03"
+    title: Manual QA (validation)
+    type: validation
+    status: done
+    review: passed

@@ -1,0 +1,7 @@
+id: producer-consumer
+code_name: ProducerConsumer
+platforms:
+  - editor
+  - standalone-windows
+created: 2026-07-24
+owner: team

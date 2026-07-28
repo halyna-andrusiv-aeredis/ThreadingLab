@@ -1,0 +1,6 @@
+id: <feature-slug>
+code_name: <PascalCaseName>
+platforms:
+  - editor
+created: YYYY-MM-DD
+owner: team

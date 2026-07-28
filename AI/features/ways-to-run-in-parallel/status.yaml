@@ -1,0 +1,34 @@
+# States and transitions are canonical in AI/core/state-machine.md.
+# overall ∈ {not_started, planned, tasks_split, implementing, qa_pending, done, blocked}
+# task status ∈ {pending, in_progress, blocked, done, superseded}
+feature_id: ways-to-run-in-parallel
+overall: done
+last_updated: 2026-07-24
+last_processed_change: CR-02
+
+blockers: []
+
+next_action:
+  - Feature complete (G4 manual QA passed; CR-01 creature + CR-02 performance).
+
+tasks:
+  - id: "01"
+    title: Scenario skeleton + texture pipeline + Sequential method (particle)
+    type: code
+    status: done
+    review: passed
+  - id: "02"
+    title: Parallel.For + ThreadPool (per-thread buffers + merge) + selector + weight
+    type: code
+    status: done
+    review: reviews/REVIEW_G3.md
+  - id: "03"
+    title: Manual QA (validation)
+    type: validation
+    status: done
+    review: passed
+  - id: "04"
+    title: Parallelize merge + colorize + SetPixelData (CR-02)
+    type: code
+    status: done
+    review: reviews/REVIEW_G3.md

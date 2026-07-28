@@ -1,0 +1,26 @@
+# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+
+# Asset meta data (kept), but ignore auto-generated
+/[Aa]ssets/AssetStoreTools*
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.csproj
+*.sln
+*.user
+
+# AI pipeline build logs (regenerated each run)
+AI/artifacts/*.log
+
+# OS
+.DS_Store
+Thumbs.db

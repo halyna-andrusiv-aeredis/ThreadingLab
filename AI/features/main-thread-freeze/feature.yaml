@@ -1,0 +1,7 @@
+id: main-thread-freeze
+code_name: MainThreadFreeze
+platforms:
+  - editor
+  - standalone-windows
+created: 2026-07-24
+owner: team

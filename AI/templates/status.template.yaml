@@ -1,0 +1,20 @@
+# States and transitions are canonical in AI/core/state-machine.md.
+# overall ∈ {not_started, planned, tasks_split, implementing, qa_pending, done, blocked}
+# task status ∈ {pending, in_progress, blocked, done, superseded}
+feature_id: <feature-slug>
+overall: not_started
+last_updated: YYYY-MM-DD
+last_processed_change: none
+
+blockers: []
+
+next_action:
+  - /build-feature <feature-slug> --new
+
+tasks: []
+# tasks:
+#   - id: "01"
+#     title: <short title>
+#     type: code            # code | validation
+#     status: pending       # see task status enum above
+#     review: passed        # 'passed' = clean approve, no file | or a reviews/REVIEW_TASK_NN.md path when findings exist

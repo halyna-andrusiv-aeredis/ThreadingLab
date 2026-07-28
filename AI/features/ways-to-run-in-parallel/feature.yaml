@@ -1,0 +1,7 @@
+id: ways-to-run-in-parallel
+code_name: WaysToRunInParallel
+platforms:
+  - editor
+  - standalone-windows
+created: 2026-07-24
+owner: team

@@ -1,0 +1,5 @@
+# Single ledger of all defects, independent of features.
+# A bug record lives at AI/bugs/BUG-<NNN>-<slug>.md. Lifecycle in AI/core/state-machine.md.
+# status ∈ {reported, fixing, in_review, verifying, closed, wont_fix, blocked}
+# origin ∈ {feature-regression, feature-broke-legacy, pre-existing, unknown}
+bugs: []

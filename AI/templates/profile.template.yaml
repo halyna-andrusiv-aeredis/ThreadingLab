@@ -1,0 +1,75 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PROJECT PROFILE (template) — the only file you rewrite when porting this
+# pipeline to a different Unity project. Fill every <placeholder>. Everything
+# under AI/core/* stays generic and reads its project-specific values from here.
+# See AI/PORTABILITY.md for the framework ↔ instance boundary.
+# ─────────────────────────────────────────────────────────────────────────────
+
+meta:
+  project_name: <Project Name>
+  code_name: <PascalCaseName>
+  description: >
+    <one or two sentences on what the game is>
+
+engine:
+  unity_version: "<e.g. 2022.3.22f1>"
+  render_pipeline: <URP | HDRP | Built-in>
+  language: C#
+
+# Library/pattern choices that vary from studio to studio. Core prompts refer to
+# these slots ("the project's DI container"), never to the concrete tool.
+stack:
+  di: <e.g. Zenject | VContainer | none>
+  async: <e.g. UniTask | Task>
+  reactive: <e.g. UniRx | R3 | events>
+  ui_mvvm: <e.g. Stepico MVVM | custom | none>
+  assets: <e.g. Addressables | Resources>
+  analytics:
+    - <e.g. Unity Services Analytics>
+  networking: <e.g. HTTP + SignalR | REST | none>
+  save: <e.g. local save package | PlayerPrefs | custom>
+
+composition_root:
+  main_installer: <MainInstaller class, or "n/a">
+  scene_builder: <boot/scene-builder class, or "n/a">
+
+platforms:
+  supported:
+    - <e.g. webgl>
+    - <e.g. editor>
+  primary_qa_target: <e.g. webgl | android | ios | standalone>
+
+config_model:
+  source: <e.g. server_storage_branch | local | none>
+  safe_fallback: <e.g. Classic | default>
+  generated_storage_glob: "<e.g. *GSI.cs, or empty>"
+
+code_layout:
+  new_code_root: "<e.g. Assets/Scripts/>"
+  legacy_zones:
+    - path: "<e.g. Assets/Legacy/>"
+      note: "<why it is sensitive; do not refactor without explicit task>"
+  ui_assets_root: "<e.g. Assets/UI/>"
+
+protected_paths:
+  - "ProjectSettings/"
+  - "Packages/manifest.json"
+  - "**/*.meta"
+  - "Addressables keys/addresses"      # drop if the project has no Addressables
+  - "prefabs, scenes, textures, materials"
+
+gates:
+  compile:
+    script: "AI/scripts/compile-unity.ps1"
+    gate_id: G2
+  lint:
+    script: "AI/scripts/lint-feature.ps1"
+  security_review:
+    command: "AI/commands/security-review.md"
+    gate_id: G5
+  manual_qa_gate: G4
+  plan_confirmation_gate: G0
+
+known_risks:
+  - <project-specific risk, e.g. WebGL memory limits>
+  - <e.g. DI graph fragility on installer changes>

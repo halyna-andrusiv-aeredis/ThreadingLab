@@ -1,0 +1,89 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PROJECT PROFILE — the only file you rewrite when porting this pipeline to a
+# different Unity project. Everything under AI/core/* (see PORTABILITY.md) is
+# meant to stay generic and read its project-specific values from here.
+#
+# Rule of thumb: if a fact is true for THIS project but not for "any Unity
+# project", it belongs here — not hardcoded in a command, prompt, or rule file.
+# ─────────────────────────────────────────────────────────────────────────────
+
+meta:
+  project_name: Threading Lab
+  code_name: ThreadingLab
+  description: >
+    Interactive Unity lab that visualizes multithreading: each scenario runs the
+    same task with/without threads and with different synchronization, showing
+    main-thread vs worker-thread behavior (FPS, races, deadlock, ThreadPool) in
+    real time. Portfolio piece for demonstrating .NET concurrency competency.
+
+engine:
+  unity_version: "6000.0.66f2"      # Unity 6 LTS
+  render_pipeline: "Built-in (no render pipeline package)"
+  language: C#
+
+# The library/pattern choices that vary from studio to studio. For this project
+# they are deliberately MINIMAL — the whole point is raw System.Threading / TPL,
+# so the reader can see the primitives, not a framework hiding them.
+stack:
+  di: "none (manual composition; a single Bootstrap spawns the host)"
+  async: "System.Threading.Tasks (TPL) + raw Thread; NO UniTask"
+  reactive: "none (plain C# events / polling)"
+  ui_mvvm: "IMGUI (OnGUI) — code-only UI, no scene wiring"
+  assets: "none (no Addressables; scenarios are pure code)"
+  analytics: []
+  networking: "none"
+  save: "none"
+
+# Composition-root entry points (project-specific class names the roles may need).
+composition_root:
+  main_installer: "Bootstrap ([RuntimeInitializeOnLoadMethod] auto-spawns the host)"
+  scene_builder: "ThreadingLabHost (IMGUI shell; owns the IThreadingScenario list)"
+
+platforms:
+  supported:
+    - editor
+    - standalone-windows
+  primary_qa_target: editor         # runs in Editor/Standalone where real threads exist
+  # NOTE: WebGL is intentionally NOT a target — it is single-threaded, so the
+  # System.Threading demos cannot run there. Do NOT apply WebGL constraints here.
+
+# No server-authoritative config in this project — scenarios are self-contained.
+config_model:
+  source: none
+  safe_fallback: none
+  generated_storage_glob: ""
+
+# Where new code goes and what must not be touched.
+code_layout:
+  new_code_root: "Assets/Scripts/"
+  legacy_zones: []                  # greenfield project — no legacy core
+  ui_assets_root: ""                # UI is drawn in code (IMGUI)
+
+# Paths the AI must never modify without an explicit task requiring it.
+protected_paths:
+  - "ProjectSettings/"
+  - "Packages/manifest.json"
+  - "**/*.meta"
+
+# Gate wiring — the commands/scripts the orchestrator invokes. These scripts are
+# path-agnostic (they detect the Unity version from ProjectVersion.txt and resolve
+# the editor via Unity Hub), so they work unchanged in this project.
+gates:
+  compile:
+    script: "AI/scripts/compile-unity.ps1"
+    gate_id: G2
+  lint:
+    script: "AI/scripts/lint-feature.ps1"
+  security_review:
+    command: "AI/commands/security-review.md"
+    gate_id: G5
+  manual_qa_gate: G4
+  plan_confirmation_gate: G0
+
+# Known project-specific risks worth surfacing in reviews/QA.
+known_risks:
+  - Worker threads must NOT touch Unity API directly — marshal via MainThreadDispatcher
+  - Threads/Tasks started by a scenario must be stopped/joined on Exit (no leaked workers)
+  - Shared mutable state across scenarios (races are intentional in demos, accidental leaks are not)
+  - CancellationToken must actually stop background work, not just flip a flag
+  - IMGUI draws every frame — keep per-frame allocations in DrawGUI low

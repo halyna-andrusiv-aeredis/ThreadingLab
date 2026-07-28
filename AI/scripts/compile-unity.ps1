@@ -1,0 +1,197 @@
+#Requires -Version 5.1
+<#
+.SYNOPSIS
+  Compile Unity project in batchmode and fail on compiler errors.
+
+.PARAMETER SkipIfUnavailable
+  Exit 0 with warning when Unity is missing or another editor has the project open.
+
+.EXAMPLE
+  .\compile-unity.ps1
+  .\compile-unity.ps1 -SkipIfUnavailable
+#>
+param(
+    [string] $ProjectPath,
+
+    [string] $UnityEditor,
+
+    [string] $LogFile,
+
+    [switch] $SkipIfUnavailable
+)
+
+$ErrorActionPreference = 'Stop'
+
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = (Resolve-Path (Join-Path $scriptDir '..\..')).Path
+
+if (-not $ProjectPath) { $ProjectPath = $repoRoot }
+else { $ProjectPath = (Resolve-Path $ProjectPath).Path }
+
+$artifactsDir = Join-Path $repoRoot 'AI\artifacts'
+if (-not (Test-Path $artifactsDir)) {
+    New-Item -ItemType Directory -Force -Path $artifactsDir | Out-Null
+}
+
+if (-not $LogFile) {
+    $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $LogFile = Join-Path $artifactsDir "unity-compile-$stamp.log"
+}
+else {
+    $LogFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($LogFile)
+}
+
+function Get-UnityVersion {
+    $versionFile = Join-Path $ProjectPath 'ProjectSettings\ProjectVersion.txt'
+    if (-not (Test-Path $versionFile)) {
+        throw "ProjectVersion.txt not found under $ProjectPath"
+    }
+    foreach ($line in Get-Content $versionFile) {
+        if ($line -match '^m_EditorVersion:\s*(.+)$') { return $Matches[1].Trim() }
+    }
+    throw "m_EditorVersion not found in ProjectVersion.txt"
+}
+
+function Resolve-UnityEditorPath([string]$Version) {
+    if ($UnityEditor -and (Test-Path $UnityEditor)) { return (Resolve-Path $UnityEditor).Path }
+
+    if ($env:UNITY_EDITOR -and (Test-Path $env:UNITY_EDITOR)) {
+        return (Resolve-Path $env:UNITY_EDITOR).Path
+    }
+
+    $hubPath = "C:\Program Files\Unity\Hub\Editor\$Version\Editor\Unity.exe"
+    if (Test-Path $hubPath) { return $hubPath }
+
+    $hubRoot = 'C:\Program Files\Unity\Hub\Editor'
+    if (Test-Path $hubRoot) {
+        $match = Get-ChildItem $hubRoot -Directory |
+            Where-Object { $_.Name -eq $Version -or $_.Name.StartsWith("$Version") } |
+            Sort-Object Name -Descending |
+            Select-Object -First 1
+        if ($match) {
+            $candidate = Join-Path $match.FullName 'Editor\Unity.exe'
+            if (Test-Path $candidate) { return $candidate }
+        }
+    }
+
+    return $null
+}
+
+function Test-CompileLog([string]$Path) {
+    $result = @{
+        Success       = $false
+        CompileErrors = [System.Collections.Generic.List[string]]::new()
+        Fatal         = $null
+    }
+
+    if (-not (Test-Path $Path)) {
+        $result.Fatal = "Log file was not created: $Path"
+        return $result
+    }
+
+    $lines = Get-Content -Path $Path -ErrorAction SilentlyContinue
+    if (-not $lines) {
+        $result.Fatal = "Log file is empty: $Path"
+        return $result
+    }
+
+    foreach ($line in $lines) {
+        if ($line -match 'another Unity instance is running') {
+            $result.Fatal = 'Another Unity instance has this project open. Close the editor or use -SkipIfUnavailable.'
+            return $result
+        }
+        if ($line -match 'License.*not valid|No valid Unity Editor license') {
+            $result.Fatal = 'Unity license is not valid for batchmode.'
+            return $result
+        }
+    }
+
+    $joined = $lines -join "`n"
+    if ($joined -match 'Scripts have compiler errors|Compilation failed|CompilerOutput:-') {
+        foreach ($line in $lines) {
+            if ($line -match 'error CS\d+:' -and $result.CompileErrors.Count -lt 30) {
+                $result.CompileErrors.Add($line.Trim())
+            }
+        }
+        if ($result.CompileErrors.Count -eq 0) {
+            $result.CompileErrors.Add('Unity reported compilation failure. See log for details.')
+        }
+        return $result
+    }
+
+    foreach ($line in $lines) {
+        if ($line -match 'error CS\d+:' -and $result.CompileErrors.Count -lt 30) {
+            $result.CompileErrors.Add($line.Trim())
+        }
+    }
+    if ($result.CompileErrors.Count -gt 0) { return $result }
+
+    if ($joined -match 'Exiting batchmode successfully|Batchmode quit successfully') {
+        $result.Success = $true
+        return $result
+    }
+
+    $result.Fatal = 'Could not confirm compile success from log. Check log manually.'
+    return $result
+}
+
+function Exit-Skip([string]$Message) {
+    Write-Host "SKIP - $Message" -ForegroundColor Yellow
+    Write-Host "Log: $LogFile" -ForegroundColor DarkGray
+    exit 0
+}
+
+function Exit-Fail([string]$Message) {
+    Write-Host "FAIL - $Message" -ForegroundColor Red
+    Write-Host "Log: $LogFile" -ForegroundColor DarkGray
+    exit 1
+}
+
+$version = Get-UnityVersion
+$editor = Resolve-UnityEditorPath $version
+
+Write-Host "Unity compile: $ProjectPath"
+Write-Host "Editor version: $version"
+
+if (-not $editor) {
+    $msg = "Unity Editor not found for version $version. Set UNITY_EDITOR or install via Unity Hub."
+    if ($SkipIfUnavailable) { Exit-Skip $msg }
+    Exit-Fail $msg
+}
+
+Write-Host "Unity.exe: $editor"
+Write-Host "Log: $LogFile"
+
+$proc = Start-Process -FilePath $editor `
+    -ArgumentList @(
+        '-batchmode',
+        '-nographics',
+        '-quit',
+        "-projectPath", $ProjectPath,
+        "-logFile", $LogFile
+    ) `
+    -Wait -PassThru -NoNewWindow
+
+$analysis = Test-CompileLog $LogFile
+
+if ($analysis.Fatal) {
+    if ($SkipIfUnavailable) { Exit-Skip $analysis.Fatal }
+    Exit-Fail $analysis.Fatal
+}
+
+if ($analysis.CompileErrors.Count -gt 0) {
+    Write-Host "FAIL - compiler errors ($($analysis.CompileErrors.Count) shown)" -ForegroundColor Red
+    foreach ($e in $analysis.CompileErrors) { Write-Host "  $e" -ForegroundColor Red }
+    Write-Host "Log: $LogFile" -ForegroundColor DarkGray
+    exit 1
+}
+
+if (-not $analysis.Success -and $proc.ExitCode -ne 0) {
+    $msg = "Unity exited with code $($proc.ExitCode) without a clear success marker."
+    if ($SkipIfUnavailable) { Exit-Skip $msg }
+    Exit-Fail $msg
+}
+
+Write-Host "PASS - Unity project compiles" -ForegroundColor Green
+Write-Host "Log: $LogFile" -ForegroundColor DarkGray
+exit 0

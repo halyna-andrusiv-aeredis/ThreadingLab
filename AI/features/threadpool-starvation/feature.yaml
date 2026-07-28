@@ -1,0 +1,7 @@
+id: threadpool-starvation
+code_name: ThreadPoolStarvation
+platforms:
+  - editor
+  - standalone-windows
+created: 2026-07-24
+owner: team
