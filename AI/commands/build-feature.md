@@ -23,9 +23,15 @@ If `$ARGUMENTS` is empty, ask for the feature id before continuing.
 /build-feature fishing-flow-ab-test
 /build-feature fishing-flow-ab-test --new
 /build-feature fishing-flow-ab-test --resume
+/build-feature fishing-flow-ab-test --resume --all
 ```
 
 Also accepts full spec path: `AI/features/fishing-flow-ab-test/spec.md`
+
+**Task-loop granularity:** `--one` is the **default** — the Implement loop stops after **one**
+code task reaches `done` (Task-loop gate, see below) instead of continuing to the next. Pass
+`--all` to run the whole remaining Implement loop without stopping between tasks. Default to
+`--one` and start a **fresh chat session** before the next command — see "After completing".
 
 ## Resolve feature id
 
@@ -147,6 +153,11 @@ On entering the loop, set `overall: implementing`.
 5. Record the review outcome on the task (`review:` = `passed` for a clean approve — **no file** — or a `reviews/REVIEW_TASK_NN.md` path when findings exist; see `review-task.md`):
    - **Approved** → task `done`
    - **Must fix** → task `blocked`, `overall: blocked`, **STOP (Gate G1)**
+6. **Task-loop gate** — unless `--all` was passed, **STOP** here even on Approved: this run
+   touches only one code task. Print the next command
+   (`/build-feature <feature-id> --resume`, or add `--all` to run the rest without stopping)
+   and recommend a **fresh chat session** before running it. With `--all`, continue to the
+   next pending code task instead of stopping.
 
 ### After all pending code tasks are `done` — the automated review gate (G3 + G5)
 
@@ -198,7 +209,12 @@ Set `last_processed_change` in `status.yaml` when CR pipeline is complete.
 - Do **not** renumber or overwrite done tasks
 - Update `status.yaml` after every task state transition
 - Pause at G0 and G4 unless user said to continue
+- Pause after every code task (Task-loop gate) unless `--all` was passed
 
 ## After completing
 
-Output: mode, feature id, `status.yaml` path, overall status, tasks completed, STOP reason, next command.
+Output: mode, feature id, `status.yaml` path, overall status, tasks completed, STOP reason, next
+command. **Recommend starting a fresh chat session** before running that next command — a
+session that stays open across tasks or features accumulates every prior task's diff, review,
+and compile output, which compacts and gets re-read unnecessarily. This applies between tasks
+(default `--one`) and between features; it does not apply mid-task.

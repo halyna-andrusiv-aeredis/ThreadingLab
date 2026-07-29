@@ -20,11 +20,15 @@ If `$ARGUMENTS` is empty, ask for the task path before continuing.
 ## Derive feature context
 
 From task path `AI/features/<feature-id>/tasks/TASK_NN.md`:
-- Spec: `AI/features/<feature-id>/spec.md`
-- Plan: `AI/features/<feature-id>/plan.md`
+- Spec: `AI/features/<feature-id>/spec.md` (reference only — see below)
+- Plan: `AI/features/<feature-id>/plan.md` (reference only — see below)
 - Status: `AI/features/<feature-id>/status.yaml`
 
-Read spec and plan for context; implement **only** what the task requires.
+The task file is self-contained (Goal, Traceability, Files allowed to touch, Acceptance) —
+implement from it directly. Do **not** read `plan.md`; it is a superset of what's already
+distilled into this task. Only open `spec.md`, and only the section(s) for the specific
+`REQ-*`/`AC-*` IDs listed under Traceability, if the task's own Acceptance checklist is
+ambiguous about what those requirements mean. Implement **only** what the task requires.
 
 ## Scope rules
 
