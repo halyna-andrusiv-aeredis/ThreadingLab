@@ -55,6 +55,7 @@ namespace ThreadingLab.Core
             _scenarios.Add(new WaysToRunInParallelScenario());
             _scenarios.Add(new ProducerConsumerScenario());
             _scenarios.Add(new ThreadPoolStarvationScenario());
+            _scenarios.Add(new AtomicMasteryScenario());
             // Next demos plug in here:
             // _scenarios.Add(new DeadlockScenario());
         }
