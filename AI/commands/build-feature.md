@@ -1,12 +1,17 @@
 # Build Feature
 
-Read:
+Read always:
 - _Project rules (context, architecture, Unity constraints) auto-load via CLAUDE.md / .cursor/rules._
 - `$ARGUMENTS`
 - `AI/core/state-machine.md` — **the states and legal transitions this command must obey**
-- `AI/project/prompts/architect.md`
-- `AI/project/prompts/developer.md`
-- `AI/project/prompts/reviewer.md`
+
+Do **not** pre-load the role prompts here. `/architect-plan`, `/implement-task`, and
+`/review-task` each declare their own role-prompt read in their own command file — read
+`architect.md` / `developer.md` / `reviewer.md` only at the point in this command where that
+step actually runs, matching current `overall` (e.g. a `qa_pending` resume needs none of
+them; a resume that only continues the Implement loop needs `developer.md`, not
+`architect.md`). Pre-loading all three on every invocation wastes ~13k tokens on runs that
+touch only one phase.
 
 Orchestrate a feature from spec through plan, tasks, implement/review loop, and feature QA.
 
@@ -65,6 +70,9 @@ route accordingly:
 | `qa_pending`   | Remind about manual QA (Gate G4); do not touch done tasks.   |
 | `done`         | Nothing to do unless a newer change request exists.          |
 
+`qa_pending` and `done` resumes need **no role prompt** — do not read `architect.md`,
+`developer.md`, or `reviewer.md` for either.
+
 ---
 
 ## Mode selection
@@ -82,7 +90,8 @@ Tell the user to use `--resume` or the change-request flow instead.
 
 **Pipeline:** (`overall` starts `not_started`)
 1. Create `feature.yaml` from `AI/templates/feature.template.yaml` if missing
-2. Run equivalent of `/architect-plan` → `plan.md`
+2. Run equivalent of `/architect-plan` → `plan.md` (reads `AI/project/prompts/architect.md`
+   at this point — this is the only phase that needs it)
 3. **STOP (Gate G0):** Ask user to confirm plan before continuing unless they said to proceed → on confirm set `overall: planned`
 4. Run equivalent of `/split-tasks` → task files in `tasks/` → set `overall: tasks_split`
 5. Create/update `status.yaml` from `AI/templates/status.template.yaml`
@@ -127,11 +136,14 @@ On entering the loop, set `overall: implementing`.
 ### Code tasks
 
 1. Set task `status: in_progress` in `status.yaml` (task `pending → in_progress`)
-2. Run `/implement-task AI/features/<feature-id>/tasks/TASK_NN.md`
+2. Run `/implement-task AI/features/<feature-id>/tasks/TASK_NN.md` — this reads
+   `AI/project/prompts/developer.md` itself; do not pre-load it earlier in this run.
 3. **Compile gate (G2)** — run `AI/scripts/compile-unity.ps1`. If compiler errors → task `→ blocked`, `overall: blocked`, **STOP**; fix and re-implement before review. If Unity unavailable or project locked in another editor → **STOP** unless user confirms clean compile; then rerun with `-SkipIfUnavailable`.
-4. Run `/review-task AI/features/<feature-id>/tasks/TASK_NN.md` — this is the **fast inline
-   review** (in your own context) that keeps the loop moving. The **independent** cold review
-   of the whole feature runs once at **Gate G3** below, not per task.
+4. Run `/review-task AI/features/<feature-id>/tasks/TASK_NN.md` — this reads
+   `AI/project/prompts/reviewer.md` itself; do not pre-load it earlier in this run. This is
+   the **fast inline review** (in your own context) that keeps the loop moving. The
+   **independent** cold review of the whole feature runs once at **Gate G3** below, not per
+   task.
 5. Record the review outcome on the task (`review:` = `passed` for a clean approve — **no file** — or a `reviews/REVIEW_TASK_NN.md` path when findings exist; see `review-task.md`):
    - **Approved** → task `done`
    - **Must fix** → task `blocked`, `overall: blocked`, **STOP (Gate G1)**
