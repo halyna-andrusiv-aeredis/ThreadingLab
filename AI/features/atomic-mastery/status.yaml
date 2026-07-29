@@ -1,0 +1,43 @@
+# States and transitions are canonical in AI/core/state-machine.md.
+# overall ∈ {not_started, planned, tasks_split, implementing, qa_pending, done, blocked}
+# task status ∈ {pending, in_progress, blocked, done, superseded}
+feature_id: atomic-mastery
+overall: done
+last_updated: 2026-07-28
+last_processed_change: none
+
+blockers: []
+
+# Gate G3 (independent review): approved, no Must-fix — reviews/REVIEW_G3.md (S1–S3 + N1 applied).
+# Gate G5 (security review):   approved, nothing >= Medium — reviews/REVIEW_G5.md.
+# Gate G4 (manual QA): PASS — confirmed by user 2026-07-28.
+next_action:
+  - Feature complete (G4 manual QA passed). Commit when ready (files still untracked in git).
+
+tasks:
+  - id: "01"
+    title: Scenario skeleton, registration, run harness, lifecycle
+    type: code
+    status: done
+    review: passed
+  # G3 note: harness window fix (per-segment linked CTS) folded into TASK_01.
+  - id: "02"
+    title: "Mode A: lock-free counter (Interlocked / CAS loop / lock)"
+    type: code
+    status: done
+    review: passed
+  - id: "03"
+    title: "Mode B: Treiber stack (CAS retry loop + conservation)"
+    type: code
+    status: done
+    review: passed
+  - id: "04"
+    title: "Mode C: false sharing (packed vs padded cliff)"
+    type: code
+    status: done
+    review: reviews/REVIEW_G3.md
+  - id: "05"
+    title: Manual QA (validation)
+    type: validation
+    status: done
+    review: passed

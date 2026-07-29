@@ -15,3 +15,7 @@ features:
     code_name: ThreadPoolStarvation
     status: done
     path: features/threadpool-starvation
+  - id: atomic-mastery
+    code_name: AtomicMastery
+    status: done
+    path: features/atomic-mastery
