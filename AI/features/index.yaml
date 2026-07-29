@@ -15,3 +15,7 @@ features:
     code_name: ThreadPoolStarvation
     status: done
     path: features/threadpool-starvation
+  - id: sync-primitives-deadlock
+    code_name: SyncPrimitivesDeadlock
+    status: qa_pending
+    path: features/sync-primitives-deadlock

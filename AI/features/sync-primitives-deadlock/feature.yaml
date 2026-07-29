@@ -1,0 +1,7 @@
+id: sync-primitives-deadlock
+code_name: SyncPrimitivesDeadlock
+platforms:
+  - editor
+  - standalone-windows
+created: 2026-07-24
+owner: team
