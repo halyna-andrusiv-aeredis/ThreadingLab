@@ -74,7 +74,7 @@ route accordingly:
 | `implementing` | Continue Implement loop from first non-`done` code task.     |
 | `blocked`      | Resolve the blocked task first (STOP unless it is now fixed). |
 | `qa_pending`   | Remind about manual QA (Gate G4); do not touch done tasks.   |
-| `done`         | Nothing to do unless a newer change request exists.          |
+| `done`         | Nothing to do unless a newer change request exists. Remind about Gate G6 below if the user is about to merge. |
 
 `qa_pending` and `done` resumes need **no role prompt** — do not read `architect.md`,
 `developer.md`, or `reviewer.md` for either.
@@ -202,7 +202,7 @@ parallel as two background subagents); reconcile both before continuing.
   re-run them in a fresh session for independence._
 
 3. If CR processed or acceptance changed → run `/test-feature <feature-id>`
-4. **STOP (Gate G4):** manual QA; do not mark validation tasks `done` without user confirmation. When confirmed → validation tasks `→ done`, `overall: done`.
+4. **STOP (Gate G4):** manual QA; do not mark validation tasks `done` without user confirmation. When confirmed → validation tasks `→ done`, `overall: done`. Optionally remind the user they can run `/code-review` here too (early, whole-branch gut-check) — it is not required at this point, only before the final merge (see Rules below).
 
 ---
 
@@ -219,6 +219,11 @@ Set `last_processed_change` in `status.yaml` when CR pipeline is complete.
 
 ## Rules
 
+- **Before merging this feature's branch into `main`**, remind the user to run `/code-review`
+  (Gate G6, manual — see `AI/core/state-machine.md`). G3 only reviewed this feature's declared
+  file scope; `/code-review`'s default whole-branch diff also covers anything else accumulated
+  on the branch (other merged features/fixes) that G3 never saw. Do not run it yourself — it is
+  user-triggered only.
 - Do **not** run full replan or re-split in `--resume`
 - Do **not** renumber or overwrite done tasks
 - Update `status.yaml` after every task state transition

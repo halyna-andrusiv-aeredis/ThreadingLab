@@ -111,6 +111,15 @@ Available identically in Cursor and Claude Code. Each `.cursor/commands/<name>.m
 | `/change-request` | `/change-request fishing-flow-ab-test` |
 | `/update-plan` | `/update-plan fishing-flow-ab-test` |
 | `/add-task` | `/add-task fishing-flow-ab-test --task 13` |
+| `/code-review` (Gate G6, manual, before merging to `main`) | `/code-review` or `/code-review ultra` |
+
+## Before merging to main
+
+`/code-review` (Claude Code's own reviewer, not part of this pipeline) reviews the **whole
+branch diff** against upstream by default — unlike G3, which only ever sees one feature's
+declared file scope. Run it once per branch, right before merging to `main`, especially if
+the branch carries more than one `done` feature/bug. Not automated — you trigger it yourself.
+See `AI/core/state-machine.md` → "Gate G6".
 
 ## Porting to another Unity project
 

@@ -115,6 +115,24 @@ re-QA passes.
 | G4   | manual QA confirmed       | validation tasks `pending → done`; feature `qa_pending → done` |
 | CR   | change request processed  | feature `qa_pending`/`done` → `implementing` (+ `tasks_split` if new tasks) |
 
+## Gate G6 — pre-merge branch review (manual, not a feature-state gate)
+
+G3 only ever sees the diff scoped to one feature's declared file list (or one bug's fix) —
+by design, to avoid handing a reviewer a branch-wide diff. That scoping creates a blind spot:
+a regression in a file **outside** the current task's scope, or in a previously-merged
+feature still sitting on the same branch, is invisible to G3.
+
+**G6 closes that gap**: before merging a feature/bug branch into `main`, run `/code-review`
+(plain, or `ultra` for a heavier multi-agent pass on a large/long-lived branch) with no
+scope argument — it reviews the whole branch diff against upstream by default, not just
+one feature's file list.
+
+- **Not automated** — `/code-review` is a user-invoked command (billed in `ultra` mode); no
+  orchestrator dispatches it, and it does not appear in the Gate → transition map above.
+- **Not tied to feature `overall`** — a branch can carry several `done` features/bugs; G6
+  runs once per branch, at merge time, not once per feature.
+- Findings are advisory: fix Must-fix-equivalent findings before merging, same bar as G3.
+
 ## Invariants (lint may enforce later)
 
 - `overall` is always one of the feature-level states above.
