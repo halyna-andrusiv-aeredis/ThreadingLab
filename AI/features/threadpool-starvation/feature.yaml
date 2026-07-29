@@ -5,3 +5,7 @@ platforms:
   - standalone-windows
 created: 2026-07-24
 owner: team
+# Backfilled — repo's root commit (spec.md was added in the initial commit; no earlier
+# state exists to diff against). Feature already qa_pending/done — G3/G5 won't rerun
+# against this unless reopened by a change request.
+base_ref: 8ce67be6ea5d0a2e98a32ae102dcb6ab56c4b041

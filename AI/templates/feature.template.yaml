@@ -4,3 +4,8 @@ platforms:
   - editor
 created: YYYY-MM-DD
 owner: team
+# Commit this feature started from (`git rev-parse HEAD` at --new time).
+# G3/G5 diff scope is `git diff <base_ref>..HEAD -- <paths>` — NEVER a branch comparison
+# like `main...HEAD` (main can be arbitrarily far behind). If missing on an older
+# feature, fall back to `git diff HEAD -- <paths>` (working tree only) and say so.
+base_ref: <git-sha>

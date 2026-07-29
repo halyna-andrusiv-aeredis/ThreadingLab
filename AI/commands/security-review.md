@@ -4,7 +4,15 @@ Read:
 - _Project rules (context, architecture, Unity constraints) auto-load via CLAUDE.md / .cursor/rules._
 - `$ARGUMENTS`
 
-Review the **current git diff** (or the feature's accumulated diff) for security issues in a Unity **client** game. This is a focused security pass, complementary to `/review-task` (which covers architecture, lifecycle, and leaks).
+Review the **current git diff** for security issues in a Unity **client** game. This is a
+focused security pass, complementary to `/review-task` (which covers architecture, lifecycle,
+and leaks).
+
+**Scope discipline:** if `/build-feature` dispatched this with an exact `git diff` command
+(base ref + `-- <paths>`), use only that command. Do not derive scope yourself by comparing
+branches (`git diff main`, `git diff main...HEAD`) — on a long-lived repo the target branch
+can be thousands of commits behind, turning a small feature diff into the whole repo's
+history. If no scope was given, review the current working-tree diff only.
 
 Claude Code users may also run the built-in `/security-review`; this command defines the project-specific checklist both tools follow.
 

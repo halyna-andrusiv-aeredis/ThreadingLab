@@ -95,7 +95,9 @@ Use only when the feature **does not exist yet**.
 Tell the user to use `--resume` or the change-request flow instead.
 
 **Pipeline:** (`overall` starts `not_started`)
-1. Create `feature.yaml` from `AI/templates/feature.template.yaml` if missing
+1. Create `feature.yaml` from `AI/templates/feature.template.yaml` if missing — set
+   `base_ref` to `git rev-parse HEAD` **now**, before any task touches code. This is the
+   diff base for G3/G5; do not leave it as the template placeholder.
 2. Run equivalent of `/architect-plan` → `plan.md` (reads `AI/project/prompts/architect.md`
    at this point — this is the only phase that needs it)
 3. **STOP (Gate G0):** Ask user to confirm plan before continuing unless they said to proceed → on confirm set `overall: planned`
@@ -165,20 +167,32 @@ Both **G3** and **G5 run automatically here, every time** — as **independent c
 in your own context, and without waiting for the user to ask. Dispatch them together (they can run in
 parallel as two background subagents); reconcile both before continuing.
 
-1. **Independent code review (Gate G3)** — dispatch the **whole feature diff** to the independent
-   `reviewer` subagent (Agent/Task tool → `reviewer` agent). Do **not** review it in your own
-   context — the point is a cold, unbiased pass over the integrated change (best blast-radius and
-   baseline analysis). Give it: the feature id, the diff scope, the spec, and the developers'
-   declared risks; it reads the real code itself.
+0. **Compute the diff scope before dispatching either gate** — never let a subagent derive it
+   itself:
+   - Paths: the union of every `## Files allowed to touch` entry across this feature's
+     `tasks/TASK_*.md`.
+   - Base: `feature.yaml → base_ref`. If present → `git diff <base_ref>..HEAD -- <paths>`.
+     If missing (older feature, backfilled without one) → `git diff HEAD -- <paths>`
+     (working tree only) and say so in what you hand the subagent.
+   - **Never** hand a subagent a bare `git diff`, `git diff main`, `git diff main...HEAD`,
+     or any other branch comparison — `main` can be arbitrarily far behind and turn a
+     34-file feature into a 20,000-file diff. Pass the exact `git diff` command, not a
+     description of "the feature diff".
+1. **Independent code review (Gate G3)** — dispatch the exact scope from step 0 to the
+   independent `reviewer` subagent (Agent/Task tool → `reviewer` agent). Do **not** review it
+   in your own context — the point is a cold, unbiased pass over the integrated change (best
+   blast-radius and baseline analysis). Give it: the feature id, the exact `git diff` command
+   (not a description), the spec, and the developers' declared risks; it reads the real code
+   itself.
 2. **Security review (Gate G5)** — dispatch at this same gate, **unless the feature has no security
    surface**: skip only when `AI/profile.yaml` shows no networking, no analytics, and
    `config_model.source: none` (or the diff does not touch config), and the diff has no
    network/file I/O — then record `G5: skipped — no security surface (see profile.yaml)` and move on.
    Otherwise dispatch it as an independent cold pass too (a subagent running
-   `AI/commands/security-review.md` over the feature diff — same treatment as G3, so it is unbiased;
-   Claude Code may also use `/security-review`). Do **not** fill the checklist inline in your own
-   context, and do not skip it just because the diff "looks safe" — the skip condition above is the
-   only valid reason.
+   `AI/commands/security-review.md` over the same exact scope from step 0 — same treatment as
+   G3, so it is unbiased; Claude Code may also use `/security-review`). Do **not** fill the
+   checklist inline in your own context, and do not skip it just because the diff "looks safe"
+   — the skip condition above is the only valid reason.
 
 **Reconcile both:**
 - Any **Must-fix** (G3) or **Critical/High** (G5) → set the affected task(s) `blocked`,

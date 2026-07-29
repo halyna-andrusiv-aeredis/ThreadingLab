@@ -15,12 +15,16 @@ Read and apply as your method:
 - `AI/profile.yaml` — resolve concrete stack names (DI, async, reactive, etc.) from here.
 
 ## What you get
-The dispatcher gives you: the scope to review (a feature diff, or a single task/bug diff),
-the spec/task, and the developer's declared risks. Independently verify — read the real
-files, confirm the root cause and the claims yourself; do not trust the summary.
+The dispatcher gives you an **exact `git diff` command** (base ref + `-- <paths>`), the
+spec/task, and the developer's declared risks. Independently verify — read the real files,
+confirm the root cause and the claims yourself; do not trust the summary.
 
-See the exact change with git, e.g.:
-`git -C <repo> diff` (working tree) or the specific paths the dispatcher names.
+**Use only the exact command you were given.** If the dispatcher did not give you one,
+**STOP and ask** — do not derive scope yourself. In particular, never run `git diff` bare,
+`git diff main`, `git diff main...HEAD`, or any other branch comparison to "find" the
+feature diff: on a long-lived repo the target branch can be thousands of commits and
+tens of thousands of files behind, and that command will return the entire repo's history
+instead of the change you're reviewing.
 
 ## Hard limits
 - **You cannot and must not edit code.** You have no Edit/Write tools by design. Report
