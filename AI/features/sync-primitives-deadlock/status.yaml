@@ -1,0 +1,30 @@
+# States and transitions are canonical in AI/core/state-machine.md.
+# overall ∈ {not_started, planned, tasks_split, implementing, qa_pending, done, blocked}
+# task status ∈ {pending, in_progress, blocked, done, superseded}
+feature_id: sync-primitives-deadlock
+overall: done
+last_updated: 2026-07-29
+last_processed_change: none
+
+blockers: []
+
+# Gate G4 (manual QA): PASS — confirmed by user 2026-07-29 (status.yaml was not updated at the time).
+next_action:
+  - Feature complete (G4 manual QA passed). Commit when ready (files still untracked in git).
+
+tasks:
+  - id: "01"
+    title: Deadlock part (occur + fix) + lifecycle
+    type: code
+    status: done
+    review: passed
+  - id: "02"
+    title: ReaderWriterLock part + plain-lock contrast + throughput
+    type: code
+    status: done
+    review: reviews/REVIEW_G3.md
+  - id: "03"
+    title: Manual QA (validation)
+    type: validation
+    status: done
+    review: passed

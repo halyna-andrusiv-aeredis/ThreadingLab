@@ -19,3 +19,7 @@ features:
     code_name: AtomicMastery
     status: done
     path: features/atomic-mastery
+  - id: sync-primitives-deadlock
+    code_name: SyncPrimitivesDeadlock
+    status: done
+    path: features/sync-primitives-deadlock
