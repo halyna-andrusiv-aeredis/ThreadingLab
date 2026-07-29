@@ -9,7 +9,11 @@ Act as the REVIEWER role. **Judge** only what this diff introduces or exposes �
 read beyond the diff (touched files in full, call sites, interface implementers, DI graph) to
 assess impact (blast radius). Do not flag pre-existing issues the change did not touch.
 
-If `/build-feature` ran **Compile gate (G2)** before this review, read the latest `AI/artifacts/unity-compile-*.log` (or path from implement step). Do **not** claim "project compiles" from IDE/linter alone when compile gate was skipped or failed.
+If `/build-feature` ran **Compile gate (G2)** before this review, treat its PASS/FAIL summary
+(the `compile-unity.ps1` console output) as compile evidence — do **not** open the full log file.
+Only if the G2 result is missing or FAIL, grep `AI/artifacts/unity-compile-*.log` for `error CS`
+(never read it in full — it is mostly Unity boot/licensing noise, tens of KB per run). Do **not**
+claim "project compiles" from IDE/linter alone when compile gate was skipped or failed.
 
 ## Arguments
 

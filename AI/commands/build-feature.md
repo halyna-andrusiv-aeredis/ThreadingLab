@@ -147,15 +147,20 @@ parallel as two background subagents); reconcile both before continuing.
    context — the point is a cold, unbiased pass over the integrated change (best blast-radius and
    baseline analysis). Give it: the feature id, the diff scope, the spec, and the developers'
    declared risks; it reads the real code itself.
-2. **Security review (Gate G5)** — **automatically at this same gate**, dispatch the security review
-   as an independent cold pass too (a subagent running `AI/commands/security-review.md` over the
-   feature diff — same treatment as G3, so it is unbiased; Claude Code may also use `/security-review`).
-   Do **not** fill the checklist inline in your own context.
+2. **Security review (Gate G5)** — dispatch at this same gate, **unless the feature has no security
+   surface**: skip only when `AI/profile.yaml` shows no networking, no analytics, and
+   `config_model.source: none` (or the diff does not touch config), and the diff has no
+   network/file I/O — then record `G5: skipped — no security surface (see profile.yaml)` and move on.
+   Otherwise dispatch it as an independent cold pass too (a subagent running
+   `AI/commands/security-review.md` over the feature diff — same treatment as G3, so it is unbiased;
+   Claude Code may also use `/security-review`). Do **not** fill the checklist inline in your own
+   context, and do not skip it just because the diff "looks safe" — the skip condition above is the
+   only valid reason.
 
 **Reconcile both:**
 - Any **Must-fix** (G3) or **Critical/High** (G5) → set the affected task(s) `blocked`,
   `overall: blocked`, **STOP**; fix via re-implement, then **re-run this gate** (both passes).
-- Both **pass** (clean, or should-fix / low-severity only) → record each outcome, set `overall: qa_pending`.
+- G3 **pass** and G5 **pass or skipped** → record each outcome, set `overall: qa_pending`.
 - _Cursor (no subagents): fall back to inline feature-level + security review, or ask the user to
   re-run them in a fresh session for independence._
 
