@@ -118,10 +118,15 @@ namespace ThreadingLab.Scenarios
         private void Stop()
         {
             _cts?.Cancel();
-            foreach (var t in _threads) t.Join(500); // workers poll the token every ~25 ms -> exit fast
+            bool allStopped = true;
+            foreach (var t in _threads) if (!t.Join(500)) allStopped = false; // workers poll the token every ~25 ms -> exit fast
             _threads.Clear();
+            if (!allStopped) Debug.LogWarning("SyncPrimitivesDeadlock: a worker did not stop within the join timeout.");
+
             _cts?.Dispose(); _cts = null;
-            _rw?.Dispose(); _rw = null; // safe: all workers joined first
+            // Disposing while a straggler is still running (allStopped == false) is safe: its next
+            // lock/rw-lock call throws ObjectDisposedException, which every worker loop catches.
+            _rw?.Dispose(); _rw = null;
         }
 
         private void Restart() { Stop(); Start(); }

@@ -43,12 +43,23 @@ namespace ThreadingLab.Scenarios
         private Mode _lastMode;
         private string _status = "Pick a mode and run.";
 
+        // Current run's worker threads (joined by Exit()) and a generation guard: a completion
+        // callback only applies its result if it is still for the current generation, so a run
+        // that outlives an Exit()/re-Run() can never clobber a newer one's state.
+        private Thread[] _workers;
+        private int _runId;
+
         public void Enter() { }
 
         public void Exit()
         {
-            // Nothing long-lived: runs complete quickly. Flag guards against a late callback.
+            _runId++; // invalidate any in-flight completion callback
+            var workers = _workers;
+            if (workers != null)
+                foreach (var w in workers) w.Join(2000); // block briefly so a stale run can never overlap the next one
+            _workers = null;
             _running = false;
+            _status = "Pick a mode and run.";
         }
 
         public void Tick(float deltaTime) { }
@@ -112,26 +123,39 @@ namespace ThreadingLab.Scenarios
             _running = true;
             _status = "running…";
             _counter = 0;
+            int myId = ++_runId;
 
-            // Do the threading work OFF the main thread so Unity stays responsive,
-            // then marshal the result back via the dispatcher.
+            // Capture the dispatcher on the MAIN thread — the worker must never call the
+            // MainThreadDispatcher.Instance getter itself: if the singleton were momentarily null
+            // (e.g. around an Editor Stop / domain-teardown race), the getter would create a
+            // GameObject from a background thread, which is a Unity API off-thread violation.
+            var dispatcher = MainThreadDispatcher.Instance;
+
+            var workers = new Thread[Threads];
+            for (int i = 0; i < Threads; i++)
+                workers[i] = new Thread(() => Work(mode)) { IsBackground = true };
+            _workers = workers; // published so Exit() can join this run's threads
+
+            // Start on the MAIN thread, before Run() returns: Exit() can Join() these Thread objects
+            // as soon as they're published, and Join() on a not-yet-started thread throws
+            // ThreadStateException — starting here (not inside Task.Run, which only queues and may
+            // not execute for a while under ThreadPool pressure) guarantees they're always startable.
+            var sw = Stopwatch.StartNew();
+            foreach (var w in workers) w.Start();
+
+            // Joining blocks, so do that OFF the main thread so Unity stays responsive, then
+            // marshal the result back via the dispatcher.
             Task.Run(() =>
             {
-                var sw = Stopwatch.StartNew();
-                var workers = new Thread[Threads];
-                for (int i = 0; i < Threads; i++)
-                {
-                    workers[i] = new Thread(() => Work(mode));
-                    workers[i].Start();
-                }
-                for (int i = 0; i < Threads; i++) workers[i].Join();
+                foreach (var w in workers) w.Join();
                 sw.Stop();
 
                 long result = Interlocked.Read(ref _counter);
                 double ms = sw.Elapsed.TotalMilliseconds;
 
-                MainThreadDispatcher.Instance.Enqueue(() =>
+                dispatcher.Enqueue(() =>
                 {
+                    if (myId != _runId) return; // stale: Exit() or a newer Run() invalidated this one
                     _lastResult = result;
                     _lastMs = ms;
                     _lastMode = mode;
