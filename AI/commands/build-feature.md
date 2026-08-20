@@ -100,7 +100,12 @@ Tell the user to use `--resume` or the change-request flow instead.
    diff base for G3/G5; do not leave it as the template placeholder.
 2. Run equivalent of `/architect-plan` → `plan.md` (reads `AI/project/prompts/architect.md`
    at this point — this is the only phase that needs it)
-3. **STOP (Gate G0):** Ask user to confirm plan before continuing unless they said to proceed → on confirm set `overall: planned`
+3. **STOP (Gate G0):** Ask user to confirm plan before continuing unless they said to proceed → on confirm set `overall: planned`.
+   At the same stop, propose `feature.yaml → risk: high` if the plan touches payments/IAP,
+   save-data/migrations, auth, or has wide blast radius across shared systems — otherwise
+   leave `risk: standard`. State the proposal and let the user confirm or override; write
+   whichever value is confirmed. This decides whether Gate G3 runs as a panel (see
+   `AI/core/state-machine.md` → "Gate G3 — panel mode for high-risk features").
 4. Run equivalent of `/split-tasks` → task files in `tasks/` → set `overall: tasks_split`
 5. Create/update `status.yaml` from `AI/templates/status.template.yaml`
 6. **Lint gate** — run `AI/scripts/lint-feature.ps1 -FeatureId <feature-id>` (or `/lint-feature`). If errors → **STOP** and fix before continuing.
@@ -181,9 +186,25 @@ parallel as two background subagents); reconcile both before continuing.
 1. **Independent code review (Gate G3)** — dispatch the exact scope from step 0 to the
    independent `reviewer` subagent (Agent/Task tool → `reviewer` agent). Do **not** review it
    in your own context — the point is a cold, unbiased pass over the integrated change (best
-   blast-radius and baseline analysis). Give it: the feature id, the exact `git diff` command
-   (not a description), the spec, and the developers' declared risks; it reads the real code
-   itself.
+   blast-radius and baseline analysis). Give each dispatched reviewer the identical package:
+   the feature id, the exact `git diff` command (not a description), the spec, and the
+   developers' declared risks; it reads the real code itself.
+
+   - **`feature.yaml → risk: standard`** (default) — dispatch **one** cold `reviewer`
+     subagent, as before.
+   - **`feature.yaml → risk: high`** — dispatch **three** independent cold `reviewer`
+     subagents on the identical scope, in parallel, each blind to the other two (no shared
+     context, no sight of each other's output). Reconcile as a panel:
+     - A Must-fix confirmed by **2 or more** of the 3 reviewers (same file/area, overlapping
+       failure scenario) → blocking, handled exactly like a single-reviewer Must-fix below.
+     - A Must-fix raised by only **1** of the 3 is not blocking by itself, but is never
+       silently dropped: record it in the review file as a **minority finding (1/3)** and
+       **STOP to ask the user** whether to treat it as blocking before setting `qa_pending` —
+       a lone reviewer catching a real issue the other two missed is plausible, not just
+       noise, so a human makes the call rather than the panel auto-clearing it.
+     - Should-fix / Nice-to-have — union across all three, deduplicated by issue; no
+       consensus required, same handling as single-reviewer.
+     - Note in the review file how many of the 3 approved outright vs. raised findings.
 2. **Security review (Gate G5)** — dispatch at this same gate, **unless the feature has no security
    surface**: skip only when `AI/profile.yaml` shows no networking, no analytics, and
    `config_model.source: none` (or the diff does not touch config), and the diff has no

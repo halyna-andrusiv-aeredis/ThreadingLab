@@ -110,10 +110,34 @@ re-QA passes.
 | G2   | compile fails             | task `in_progress → blocked`; feature `→ blocked` |
 | G1   | review = Must fix         | task `in_progress → blocked`; feature `→ blocked` |
 | —    | review = Approved (inline, per task) | task `in_progress → done`          |
-| G3   | all code done → **independent** review of the whole feature diff (cold `reviewer` subagent) | Must-fix → task(s) `→ blocked`, feature `→ blocked`; else continue |
+| G3   | all code done → **independent** review of the whole feature diff (cold `reviewer` subagent, or a 3-reviewer panel — see below) | Must-fix → task(s) `→ blocked`, feature `→ blocked`; else continue |
 | G5   | G3 passed, security ok    | feature `implementing → qa_pending`          |
 | G4   | manual QA confirmed       | validation tasks `pending → done`; feature `qa_pending → done` |
 | CR   | change request processed  | feature `qa_pending`/`done` → `implementing` (+ `tasks_split` if new tasks) |
+
+## Gate G3 — panel mode for high-risk features
+
+A single cold `reviewer` pass has one reviewer's blind spots. For most features that's an
+acceptable trade against speed/cost — but for changes with wide blast radius or high cost of
+a missed bug (payments/IAP, save-data/migrations, auth), one reviewer's miss is expensive
+enough to warrant redundancy.
+
+**Trigger:** `feature.yaml → risk: high`, set at Gate G0 (architect proposes, user confirms —
+see `build-feature.md`). Default is `risk: standard` (single reviewer, unchanged behavior).
+
+**Panel mechanics** (`risk: high` only): dispatch 3 independent cold `reviewer` subagents on
+the identical diff scope, in parallel, blind to each other (adversarial-verify pattern —
+redundant independent judgment, not a single point of failure).
+
+- **Must-fix confirmed by ≥2 of 3** → blocking, same as a single-reviewer Must-fix.
+- **Must-fix raised by only 1 of 3** → not auto-blocking, but never silently dropped: recorded
+  as a minority finding and put to the user for a manual call before the feature moves to
+  `qa_pending`. The point of the panel is to catch what one reviewer misses, not to let two
+  reviewers outvote a real bug a third one found.
+- **Should-fix / Nice-to-have** — union of all three, deduplicated; no consensus needed.
+
+This does not add a new state to the tables above — `risk` only changes *how* Gate G3 is
+executed (1 reviewer vs. 3), not what `overall`/`status` values exist or how they transition.
 
 ## Gate G6 — pre-merge branch review (manual, not a feature-state gate)
 

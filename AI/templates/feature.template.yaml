@@ -9,3 +9,7 @@ owner: team
 # like `main...HEAD` (main can be arbitrarily far behind). If missing on an older
 # feature, fall back to `git diff HEAD -- <paths>` (working tree only) and say so.
 base_ref: <git-sha>
+# Set to `high` at Gate G0 (see build-feature.md) for payments/IAP, save-data/migrations,
+# auth, or any change with wide blast radius across shared systems. Drives Gate G3 into
+# panel mode (3 independent cold reviewers + consensus) instead of a single cold pass.
+risk: standard
