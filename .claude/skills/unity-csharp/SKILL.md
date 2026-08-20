@@ -1,9 +1,9 @@
 ---
 name: unity-csharp
-description: Unity C# implementation conventions and hard guardrails for Fishing Fortune — Zenject DI, UniTask async, UniRx subscription disposal, Stepico MVVM (dumb Views), Addressables key stability. Use when writing or modifying C# gameplay or UI code.
+description: Unity C# implementation conventions and hard guardrails for this project, resolved from AI/profile.yaml (DI, async, reactive, UI/MVVM, asset system) and AI/core/rules/unity-core.md. Use when writing or modifying C# gameplay or UI code.
 ---
 
-Apply the canonical developer guidance for Fishing Fortune as authoritative:
+Apply the canonical developer guidance for this project as authoritative:
 
 - `AI/project/prompts/developer.md` — implementation rules, guardrails, and deliverables
 - `AI/project/unity-rules.md` — tech constraints and the quality bar after each task
